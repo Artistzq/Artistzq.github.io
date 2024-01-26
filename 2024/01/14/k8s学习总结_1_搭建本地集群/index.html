@@ -16,22 +16,23 @@
   <meta name="author" content="姚宗庆">
   <meta name="keywords" content="">
   
-    <meta name="description" content="K8s学习总结——【一】 搭建本地集群1 概念总结1.1 kubernetes（k8s） kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。 理解： 现在的大型程序被分割为多个服务，各自运行在单独的容器里。 为了提升性能和可用性，多个容器需要分散在多个物理机器上，并拥有备份。 多个服务和容器需要通信 k8s用于自动化管理此系统。    1.2 组成物理层面 Master节点">
+    <meta name="description" content="kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群1 概念总结1.1 kubernetes（k8s） kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。 理解： 现在的大型程序被分割为多个服务，各自运行在单独的容器里。 为了提升性能和可用性，多个容器需要分散在多个物理机器上，并拥有备份。 多个服务和容器需要通信 k8s用于自动化管理此系统。    1.2">
 <meta property="og:type" content="article">
-<meta property="og:title" content="K8s学习总结——【一】 搭建本地集群">
+<meta property="og:title" content="kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群">
 <meta property="og:url" content="https://artistzq.github.io/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_1_%E6%90%AD%E5%BB%BA%E6%9C%AC%E5%9C%B0%E9%9B%86%E7%BE%A4/index.html">
 <meta property="og:site_name" content="姚宗庆的博客">
-<meta property="og:description" content="K8s学习总结——【一】 搭建本地集群1 概念总结1.1 kubernetes（k8s） kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。 理解： 现在的大型程序被分割为多个服务，各自运行在单独的容器里。 为了提升性能和可用性，多个容器需要分散在多个物理机器上，并拥有备份。 多个服务和容器需要通信 k8s用于自动化管理此系统。    1.2 组成物理层面 Master节点">
+<meta property="og:description" content="kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群1 概念总结1.1 kubernetes（k8s） kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。 理解： 现在的大型程序被分割为多个服务，各自运行在单独的容器里。 为了提升性能和可用性，多个容器需要分散在多个物理机器上，并拥有备份。 多个服务和容器需要通信 k8s用于自动化管理此系统。    1.2">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-01-14T03:12:36.000Z">
-<meta property="article:modified_time" content="2024-01-14T03:12:49.214Z">
+<meta property="article:modified_time" content="2024-01-26T15:36:52.296Z">
 <meta property="article:author" content="姚宗庆">
-<meta property="article:tag" content="K8s">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="kind">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>K8s学习总结——【一】 搭建本地集群 - 姚宗庆的博客</title>
+  <title>kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群 - 姚宗庆的博客</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -197,7 +198,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="K8s学习总结——【一】 搭建本地集群"></span>
+            <span id="subtitle" data-typed-text="kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群"></span>
           
         </div>
 
@@ -268,12 +269,12 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">K8s学习总结——【一】 搭建本地集群</h1>
+            <h1 id="seo-header">kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="K8s学习总结——【一】-搭建本地集群"><a href="#K8s学习总结——【一】-搭建本地集群" class="headerlink" title="K8s学习总结——【一】 搭建本地集群"></a>K8s学习总结——【一】 搭建本地集群</h1><h2 id="1-概念总结"><a href="#1-概念总结" class="headerlink" title="1 概念总结"></a>1 概念总结</h2><h3 id="1-1-kubernetes（k8s）"><a href="#1-1-kubernetes（k8s）" class="headerlink" title="1.1 kubernetes（k8s）"></a>1.1 kubernetes（k8s）</h3><ul>
+                <h1 id="kubelabs——k8s学习与实验【1】使用-kind-搭建本地集群"><a href="#kubelabs——k8s学习与实验【1】使用-kind-搭建本地集群" class="headerlink" title="kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群"></a>kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群</h1><h2 id="1-概念总结"><a href="#1-概念总结" class="headerlink" title="1 概念总结"></a>1 概念总结</h2><h3 id="1-1-kubernetes（k8s）"><a href="#1-1-kubernetes（k8s）" class="headerlink" title="1.1 kubernetes（k8s）"></a>1.1 kubernetes（k8s）</h3><ul>
 <li>kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。</li>
 <li>理解：<ul>
 <li>现在的大型程序被分割为多个服务，各自运行在单独的容器里。</li>
@@ -429,11 +430,34 @@
             <div>
               <div class="post-metas my-3">
   
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/kubelabs/" class="category-chain-item">kubelabs</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
   
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/K8s/" class="print-no-link">#K8s</a>
+        <a href="/tags/k8s/" class="print-no-link">#k8s</a>
+      
+        <a href="/tags/kind/" class="print-no-link">#kind</a>
       
     </div>
   
@@ -445,7 +469,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>K8s学习总结——【一】 搭建本地集群</div>
+      <div>kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群</div>
       <div>https://artistzq.github.io/2024/01/14/k8s学习总结_1_搭建本地集群/</div>
     </div>
     <div class="license-meta">
@@ -490,9 +514,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_2_CNI/" title="K8s学习总结——【二】 容器网络接口（CNI）">
+                      <a href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_2_CNI/" title="kubelabs——k8s学习与实验【2】容器网络接口（CNI）以及切换CNI插件">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">K8s学习总结——【二】 容器网络接口（CNI）</span>
+                        <span class="hidden-mobile">kubelabs——k8s学习与实验【2】容器网络接口（CNI）以及切换CNI插件</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     

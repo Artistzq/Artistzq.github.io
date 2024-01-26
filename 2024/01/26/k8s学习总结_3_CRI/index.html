@@ -1,0 +1,810 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="姚宗庆">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时1 概念容器运行时（Container Runtime）是 Kubernetes（k8s）集群中每个节点的核心组件，负责管理容器的整个生命周期，包括从拉取和运行容器镜像等关键任务。     在k8s 1.23版本之前，kubelet依赖于dockershim来操作Docker容器运行时。Docker内部集成了con">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时">
+<meta property="og:url" content="https://artistzq.github.io/2024/01/26/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_3_CRI/index.html">
+<meta property="og:site_name" content="姚宗庆的博客">
+<meta property="og:description" content="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时1 概念容器运行时（Container Runtime）是 Kubernetes（k8s）集群中每个节点的核心组件，负责管理容器的整个生命周期，包括从拉取和运行容器镜像等关键任务。     在k8s 1.23版本之前，kubelet依赖于dockershim来操作Docker容器运行时。Docker内部集成了con">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124152148.png">
+<meta property="og:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124144045.png">
+<meta property="article:published_time" content="2024-01-26T15:17:15.000Z">
+<meta property="article:modified_time" content="2024-01-26T15:36:55.581Z">
+<meta property="article:author" content="姚宗庆">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="cri">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124152148.png">
+  
+  
+  
+  <title>kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时 - 姚宗庆的博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"artistzq.github.io","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2,"ground_glass":{"enable":true,"px":3,"alpha":0.7}},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>姚宗庆的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/cover.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-01-26 23:17" pubdate>
+          2024年1月26日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时"><a href="#kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时" class="headerlink" title="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时"></a>kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时</h1><h2 id="1-概念"><a href="#1-概念" class="headerlink" title="1 概念"></a>1 概念</h2><p>容器运行时（Container Runtime）是 Kubernetes（k8s）集群中每个节点的核心组件，负责管理容器的整个生命周期，包括从拉取和运行容器镜像等关键任务。</p>
+<div align=center>
+<img src="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124152148.png" srcset="/img/loading.gif" lazyload>
+</div>
+
+<p>在k8s 1.23版本之前，kubelet依赖于dockershim来操作Docker容器运行时。Docker内部集成了containerd并在此基础上构建了更加用户友好的功能层，但这也意味着dockershim需要随着Docker的更新持续维护跟进。</p>
+<p>为了实现Kubernetes与具体容器运行时技术的解耦，自k8s 1.5版本起，社区引入了容器运行时接口（Container Runtime Interface，CRI）标准，它提供了一组标准化接口以供 Kubernetes 平台与各种容器运行时进行交互，并推荐使用原生支持CRI的容器运行时如containerd和CRI-O。这一转变标志着Kubernetes未来将不再直接绑定Docker，而是通过兼容CRI的标准运行时统一管控容器，从而提高了容器运行时的可插拔性以及Kubernetes本身的稳定性和灵活性。kubelet通过gRPC协议结合protobuf序列化方式来实现对CRI接口的远程调用过程。</p>
+<p>尽管如此，这并不影响继续使用通过Docker打包的镜像。实际上，任何遵循OCI（开放容器倡议，Open Container Initiative）规范创建的镜像都可以被兼容。由于Docker打包的镜像同样遵循OCI规范，因此它们仍能在k8s环境中得到有效的管理和运行。</p>
+<p>CRI相关的概念如下图所示。</p>
+<p><img src="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124144045.png" srcset="/img/loading.gif" lazyload alt="cri-arch"></p>
+<h3 id="1-1-Docker-和-dockershim"><a href="#1-1-Docker-和-dockershim" class="headerlink" title="1.1 Docker 和 dockershim"></a>1.1 Docker 和 dockershim</h3><p>Docker是一个方便的工具，用于处理镜像打包、发布、容器运行等操作。Docker本身包含了多个组件，如：</p>
+<ul>
+<li>docker-cli</li>
+<li>containerd</li>
+<li>runc</li>
+<li>…</li>
+</ul>
+<p>k8s 中包含了一个组件 dockershim，使其能够支持Docker。Docker 没有实现CRI接口（Docker出现时间更早），因此 k8s 不得不自己维护一个工具，通过此工具操作Docker，这就是dockershim。</p>
+<p>随着容器化成为行业标准，k8s 项目为了增加了对额外运行时的支持，提出了 CRI，更多的运行时实现了此接口。k8s 项目对 dockershim 和docker的依赖使整个项目变得脆弱，且对 dockershim 的单独维护增加了成本，在1.23版本后，k8s 开始弃用 dockershim，取消对Docker的直接支持。</p>
+<p>另外，Docker 的多层封装和调用，导致其在可维护性上略逊一筹，增加了线上问题的定位难度。</p>
+<h3 id="1-2-CRI"><a href="#1-2-CRI" class="headerlink" title="1.2 CRI"></a>1.2 CRI</h3><p>类似 JAVA 的 SPI 机制，k8s 定义了 CRI 后，不需要再像维护 dockershim 那样，为某个容器运行时维护一套适配工具。只需要各个容器运行时的提供方实现了这个接口，k8s 就可以直接调用对应的操作，例如containerd和CRI-O。</p>
+<p>containerd 是一个来自 Docker 的高级容器运行时，并实现了 CRI 规范。它是从 Docker 项目中分离出来的，因此 Docker 自己在内部使用 containerd。containerd 通过其 CRI 插件实现了 k8s 容器运行时接口（CRI），它可以管理容器的整个生命周期，包括从镜像的传输、存储到容器的执行、监控再到网络。</p>
+<p>CRI-O 是另一个实现了容器运行时接口（CRI）的高级容器运行时，是 containerd 的一个替代品。</p>
+<p>使用 containerd 和 CRI-O 的方案比起 docker 简洁很多，因为省去了冗余的多层封装。</p>
+<h3 id="1-3-OCI"><a href="#1-3-OCI" class="headerlink" title="1.3 OCI"></a>1.3 OCI</h3><p>OCI 是指开放容器倡议（Open Container Initiative），旨在制定容器镜像和运行时的行业标准。只要是符合规范的不同运行时，这些运行时可以有不同的底层实现。例如，符合 OCI 的在 linux 上的容器运行时和在 Windows 上的容器运行时。遵循该倡议的运行时通常更底层，和操作系统进行交互，从而创建容器。runC和kata-runtime就是这样的容器运行时。</p>
+<p>runc 是轻量级的通用运行时容器，它遵守 OCI 规范，是实现 OCI 接口的最低级别的组件，它与内核交互创建并运行容器。runc 为容器提供了所有的低级功能，与现有的低级 Linux 功能交互，如命名空间和控制组，它使用这些功能来创建和运行容器进程。</p>
+<h3 id="1-4-dockershim的弃用"><a href="#1-4-dockershim的弃用" class="headerlink" title="1.4 dockershim的弃用"></a>1.4 dockershim的弃用</h3><p>dockershim 的弃用并不意味着 k8s 将不能运行 Docker 格式的容器。containerd 和 CRI-O 都可以运行 Docker 格式的镜像，因为 Docker 格式的镜像也遵循了 OCI 格式，只是它们不再需要使用 docker 命令或 Docker 守护程序。</p>
+<p>从功能性来讲，containerd 和 CRI-O 都符合 CRI 和 OCI 的标准。从稳定性来说，containerd 一直在 docker 里使用，生产环境经验比较充足，因此更推荐选择 containerd 作为 k8s 的容器运行时。</p>
+<h2 id="2-实验"><a href="#2-实验" class="headerlink" title="2 实验"></a>2 实验</h2><p>实验目的：使用 containerd 或 CRI-O 作为容器运行时，并在工作节点中使用 <code>crictl</code> 命令代替 docker 命令。</p>
+<h3 id="2-1-kind-默认使用-containerd"><a href="#2-1-kind-默认使用-containerd" class="headerlink" title="2.1 kind 默认使用 containerd"></a>2.1 kind 默认使用 containerd</h3><p>查阅文档得知，Kind 内部使用 Kubeadm 创建和启动集群节点，并使用 containerd 作为容器运行时，所以弃用 dockershim对 Kind 没有什么影响。另一个部署单机集群的工具 <code>minikube</code> 使用 cri-o 作为默认容器运行时。</p>
+<p>进入Master Node，查看使用的容器运行时：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">yzq@ubuntu:~/Documents/k8s-proj/cni-test$ docker <span class="hljs-built_in">exec</span> -it cni-test-cluster-control-plane /bin/bash<br>root@cni-test-cluster-control-plane:/<span class="hljs-comment"># kubectl get node cni-test-cluster-worker -o json | jq &#x27;.status.nodeInfo.containerRuntimeVersion&#x27;</span><br><span class="hljs-string">&quot;containerd://1.7.1&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>使用 <code>crictl</code> 查看镜像</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@cni-test-cluster-control-plane:/<span class="hljs-comment"># crictl images ps</span><br>IMAGE                                      TAG                  IMAGE ID            SIZE<br>docker.io/flannel/flannel-cni-plugin       v1.2.0               a55d1bad692b7       3.88MB<br>docker.io/flannel/flannel                  v0.24.0              0dc86fe0f22e6       28MB<br>docker.io/kindest/kindnetd                 v20230511-dc714da8   b0b1fa0f58c6e       27.7MB<br>docker.io/kindest/local-path-helper        v20230510-486859a6   be300acfc8622       3.05MB<br>docker.io/kindest/local-path-provisioner   v20230511-dc714da8   ce18e076e9d4b       19.4MB<br>docker.io/library/go-hello-world-image     v0.0.1               586004f581b85       21.3MB<br>registry.k8s.io/coredns/coredns            v1.11.1              cbb01a7bd410d       18.2MB<br>registry.k8s.io/etcd                       3.5.10-0             a0eed15eed449       56.6MB<br>registry.k8s.io/kube-apiserver             v1.29.0              4a9136aaad730       86.1MB<br>registry.k8s.io/kube-controller-manager    v1.29.0              23d55452a141c       80.3MB<br>registry.k8s.io/kube-proxy                 v1.29.0              fa4dee78049db       83.5MB<br>registry.k8s.io/kube-scheduler             v1.29.0              ba16e783eea7b       60.6MB<br>registry.k8s.io/pause                      3.7                  221177c6082a8       311kB<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-将-kind-使用的运行时替换成-CRI-O"><a href="#2-2-将-kind-使用的运行时替换成-CRI-O" class="headerlink" title="2.2 将 kind 使用的运行时替换成 CRI-O"></a>2.2 将 kind 使用的运行时替换成 CRI-O</h3><p>在利用 kind 工具构建集群时，默认会采用 <code>kindest/node</code> 镜像作为节点镜像，该镜像内部预设的容器运行时是 containerd。若要将 containerd 更改为 crio 运行时，有两种可行方案：</p>
+<ol>
+<li><p>通过自定义节点镜像的方式进行切换：首先，在 <code>kindest/node</code> 镜像的基础之上重新构建一个新的节点镜像，并结合使用 <code>kind create cluster</code> 命令以及适配 crio 的定制版 <code>kind-config.yaml</code> 文件来创建新的集群。可以参考： <a target="_blank" rel="noopener" href="https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2"><code>https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2</code></a> 和 <a target="_blank" rel="noopener" href="https://github.com/warm-metal/kindest-base-crio/tree/main"><code>https://github.com/warm-metal/kindest-base-crio/tree/main</code></a> 。</p>
+<blockquote>
+<p>在实际操作过程中，参考网站提供的镜像版本较为陈旧，和现有的 kind 以及 k8s 有兼容性问题。</p>
+</blockquote>
+</li>
+<li><p>在已用 kind 创建好的 k8s 集群上直接操作：进入 Worker 节点或 Master 节点（它们实质上是由 kind 创建的 Docker 容器），手动安装并配置 crio 运行时，然后对节点进行重新初始化或重新加入集群。</p>
+<blockquote>
+<p>为了深入理解 k8s 集群创建过程中的各个环节，并尽可能保留关键操作步骤，我们选择手动在集群内安装 crio 运行时。后续的文章中，我们将尝试探索如何打包适配 crio 的节点镜像。</p>
+</blockquote>
+</li>
+</ol>
+<p>本篇文章重点关注第2种方法。</p>
+<h4 id="2-2-1-创建新集群"><a href="#2-2-1-创建新集群" class="headerlink" title="2.2.1 创建新集群"></a>2.2.1 创建新集群</h4><p>利用本系列第一篇博客的配置文件 <a target="_blank" rel="noopener" href="https://github.com/Artistzq/kubelabs/tree/main/hello"><code>https://github.com/Artistzq/kubelabs/tree/main/hello</code></a> ，重新创建集群 <code>crio-hello-cluster</code>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">bash create.sh -n crio-hello-cluster<br></code></pre></td></tr></table></figure>
+
+<p>进入 Master 节点 <code>crio-hello-cluster-control-plane</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> -it crio-hello-cluster-control-plane /bin/bash<br></code></pre></td></tr></table></figure>
+
+<p>查看信息</p>
+<ul>
+<li><p>查看 k8s 版本</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@hello-crio-cluster-control-plane:/<span class="hljs-comment"># kubectl version</span><br>Client Version: v1.29.0<br>Kustomize Version: v5.0.4-0.20230601165947-6ce0bf390ce3<br>Server Version: v1.29.0<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>查看 linux 发行版本</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@crio-hello-cluster-control-plane:/<span class="hljs-comment"># cat /etc/issue</span><br>Debian GNU/Linux 11 \n \l<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>查看节点详细信息</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@crio-hello-cluster-control-plane:/<span class="hljs-comment"># kubectl get nodes -owide</span><br>NAME                               STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION      CONTAINER-RUNTIME<br>crio-hello-cluster-control-plane   Ready    control-plane   34m   v1.29.0   172.18.0.6    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br>crio-hello-cluster-worker          Ready    &lt;none&gt;          34m   v1.29.0   172.18.0.7    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br>crio-hello-cluster-worker2         Ready    &lt;none&gt;          34m   v1.29.0   172.18.0.5    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>查看容器运行时，都是 <code>containerd://1.7.1</code>。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@crio-hello-cluster-control-plane:/<span class="hljs-comment"># kubectl get nodes -o json | jq -r &#x27;.items[] | &#123;Name: .metadata.name, ContainerRuntime: .status.nodeInfo.containerRuntimeVersion&#125;&#x27;</span><br>&#123;<br><span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;crio-hello-cluster-control-plane&quot;</span>,<br><span class="hljs-string">&quot;ContainerRuntime&quot;</span>: <span class="hljs-string">&quot;containerd://1.7.1&quot;</span><br>&#125;<br>&#123;<br><span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;crio-hello-cluster-worker&quot;</span>,<br><span class="hljs-string">&quot;ContainerRuntime&quot;</span>: <span class="hljs-string">&quot;containerd://1.7.1&quot;</span><br>&#125;<br>&#123;<br><span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;crio-hello-cluster-worker2&quot;</span>,<br><span class="hljs-string">&quot;ContainerRuntime&quot;</span>: <span class="hljs-string">&quot;containerd://1.7.1&quot;</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="2-2-2-为-WorkerNode-安装CRIO"><a href="#2-2-2-为-WorkerNode-安装CRIO" class="headerlink" title="2.2.2 为 WorkerNode 安装CRIO"></a>2.2.2 为 WorkerNode 安装CRIO</h4><p><code>kind-config.yaml</code> 配置文件指定了1个 MasterNode 和2个 WorkerNode，我们进入其中一个WorkerNode，按照官网 <a target="_blank" rel="noopener" href="https://cri-o.io/"><code>https://cri-o.io/</code></a> 和 Github 官方仓库 <a target="_blank" rel="noopener" href="https://github.com/cri-o/cri-o/blob/main/install.md"><code>https://github.com/cri-o/cri-o/blob/main/install.md</code></a> 上的指导，为其安装 CRIO-O。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> -it crio-hello-cluster-worker /bin/bash<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注：以下的安装 CRI-O 的操作都是在此节点容器内进行的！</p>
+</blockquote>
+<ol>
+<li><p>指定 <code>VERSION</code> 和 <code>OS</code> 环境变量。  </p>
+<p> OS指定当前系统的版本，官网给出了对应关系，例如Ubuntu 20.04的主机，需要 <code>export OS=xUbuntu_20.04</code> 。 kind 创建的节点为Debian 11，对应 <code>export OS=Debian_11</code>。</p>
+<p> VERSION指定crio的版本，支持主版本和具体版本的指定，例如 <code>1.24:1.24.1</code> 。这里有坑：**<code>opensuse</code> 上支持的最新的版本是 <code>1.24.6</code>** ，更高的版本如 github 上的最新版 <code>1.29.1</code> ，是无法在 <a target="_blank" rel="noopener" href="https://download.opensuse.org/repositories"><code>https://download.opensuse.org/repositories</code></a> 中下载的，而文档没有说明这一点，只说明了支持主版本号和具体版本号。因此安装时，如果指定版本为 <code>1.29.1</code> ，会报错，提示无法找到文件。</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">export</span> OS=Debian_11<br><span class="hljs-built_in">export</span> VERSION=1.24.6<br><span class="hljs-built_in">export</span> SUBVERSION=$(<span class="hljs-built_in">echo</span> <span class="hljs-variable">$VERSION</span> | awk -F<span class="hljs-string">&#x27;.&#x27;</span> <span class="hljs-string">&#x27;&#123;print $1&quot;.&quot;$2&#125;&#x27;</span>) <span class="hljs-comment"># 1.24</span><br></code></pre></td></tr></table></figure>
+</li>
+<li><p>安装相关工具</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">apt-get install -y gnupg tzdata<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>添加 apt 源，并下载安装 crio</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">CONTAINERS_URL=<span class="hljs-string">&quot;https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/<span class="hljs-variable">$&#123;OS&#125;</span>/&quot;</span><br><span class="hljs-comment"># crio 镜像地址</span><br>CRIO_URL=<span class="hljs-string">&quot;http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/<span class="hljs-variable">$&#123;SUBVERSION&#125;</span>:/<span class="hljs-variable">$&#123;VERSION&#125;</span>/<span class="hljs-variable">$&#123;OS&#125;</span>/&quot;</span><br><br><span class="hljs-comment"># 把上述 url 添加到 apt 的源</span><br><span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;deb <span class="hljs-variable">$&#123;CONTAINERS_URL&#125;</span> /&quot;</span> &gt; /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list<br><span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;deb <span class="hljs-variable">$&#123;CRIO_URL&#125;</span> /&quot;</span> &gt; /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:<span class="hljs-variable">$&#123;VERSION&#125;</span>.list<br><br><span class="hljs-comment"># 下载密钥，并将其添加到 apt 信任密钥列表</span><br>curl -L <span class="hljs-variable">$&#123;CONTAINERS_URL&#125;</span>Release.key | apt-key add - || <span class="hljs-literal">true</span><br>curl -L <span class="hljs-variable">$&#123;CRIO_URL&#125;</span>Release.key | apt-key add - || <span class="hljs-literal">true</span><br><br><span class="hljs-comment"># 通过 apt 安装 cri-o 和 cri-o-runc</span><br>apt-get update<br>apt-get install -y cri-o cri-o-runc<br></code></pre></td></tr></table></figure>
+
+<p> 如果下载太慢可以临时添加代理环境变量，例如：</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">export</span> http_proxy=<span class="hljs-string">&quot;http:192.168.115.1:7890&quot;</span><br><span class="hljs-built_in">export</span> https_proxy=<span class="hljs-string">&quot;http:192.168.115.1:7890&quot;</span><br><span class="hljs-built_in">env</span> | grep proxy <span class="hljs-comment"># 检查</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：在后续要取消 <code>proxy</code> 相关环境变量，或加入 <code>no_proxy</code> 的变量，否则导致此工作节点无法加入集群。</p>
+</blockquote>
+<p> 安装结束时会提示 <code>crictl.yaml</code> 已存在，因为该节点之前使用的是 <code>containerd</code> ，已经配置了 <code>crictl</code> 。这里选择覆盖 <code>Y</code> 。</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">Configuration file <span class="hljs-string">&#x27;/etc/crictl.yaml&#x27;</span><br>==&gt; File on system created by you or by a script.<br>==&gt; File also <span class="hljs-keyword">in</span> package provided by package maintainer.<br>What would you like to <span class="hljs-keyword">do</span> about it ?  Your options are:<br>    Y or I  : install the package maintainer<span class="hljs-string">&#x27;s version</span><br><span class="hljs-string">    N or O  : keep your currently-installed version</span><br><span class="hljs-string">    D     : show the differences between the versions</span><br><span class="hljs-string">    Z     : start a shell to examine the situation</span><br><span class="hljs-string">The default action is to keep your current version.</span><br><span class="hljs-string">*** crictl.yaml (Y/I/N/O/D/Z) [default=N] ? Y</span><br></code></pre></td></tr></table></figure>
+</li>
+<li><p>配置 cri-o</p>
+<p> 安装完后配置 <code>cri-o</code></p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;[crio.runtime]</span><br><span class="hljs-string">cgroup_manager=\&quot;cgroupfs\&quot;</span><br><span class="hljs-string">conmon_cgroup=\&quot;pod\&quot;</span><br><span class="hljs-string">pause_image = \&quot;k8s.gcr.io/pause:3.2\&quot;</span><br><span class="hljs-string">storage_driver = \&quot;vfs\&quot;&quot;</span> &gt; /etc/crio/crio.conf<br><br></code></pre></td></tr></table></figure>
+</li>
+<li><p>设置 crictl</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 将 crictl.yaml 中所有出现的 containerd 字符串替换为 crio</span><br>sed -i <span class="hljs-string">&#x27;s/containerd/crio/g&#x27;</span> /etc/crictl.yaml<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>检查 containerd 和 crio</p>
+<p> 检查当前状态</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># containerd 状态</span><br>$ systemctl status containerd | grep Active <span class="hljs-comment"># Runing</span><br> Active: active (running) since Fri 2024-01-26 08:23:49 UTC; 1h 8min ago<br><span class="hljs-comment"># crio 状态</span><br>$ systemctl status crio | grep Active <span class="hljs-comment"># Dead</span><br> Active: inactive (dead)<br></code></pre></td></tr></table></figure>
+
+<p> 关闭 <code>containerd</code> 服务，启动 <code>crio</code> 服务</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ systemctl <span class="hljs-built_in">disable</span> containerd &amp;&amp; systemctl stop containerd<br>Removed /etc/systemd/system/multi-user.target.wants/containerd.service.<br>$ systemctl <span class="hljs-built_in">enable</span> crio &amp;&amp; systemctl start crio<br></code></pre></td></tr></table></figure>
+
+<p> 再次检查状态</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ systemctl status containerd | grep Active <span class="hljs-comment"># Dead</span><br> Active: inactive (dead) since Fri 2024-01-26 09:36:03 UTC; 50s ago<br>$ systemctl status crio | grep Active <span class="hljs-comment"># Runing</span><br> Active: active (running) since Fri 2024-01-26 09:35:08 UTC; 1min 50s ago<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h4 id="2-2-3-使用-Kubeadm-重新加入集群"><a href="#2-2-3-使用-Kubeadm-重新加入集群" class="headerlink" title="2.2.3 使用 Kubeadm 重新加入集群"></a>2.2.3 使用 <code>Kubeadm</code> 重新加入集群</h4><ol>
+<li><p>检查节点状态</p>
+<p> 重新开一个终端，进入 MasterNode，检查集群状态</p>
+<blockquote>
+<p>此命令在宿主机上执行</p>
+</blockquote>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker <span class="hljs-built_in">exec</span> -it crio-hello-cluster-control-plane kubectl get nodes -owide<br>NAME                               STATUS     ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION      CONTAINER-RUNTIME<br>crio-hello-cluster-control-plane   Ready      control-plane   77m   v1.29.0   172.18.0.6    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br>crio-hello-cluster-worker          NotReady   &lt;none&gt;          76m   v1.29.0   172.18.0.7    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://Unknown<br>crio-hello-cluster-worker2         Ready      &lt;none&gt;          76m   v1.29.0   172.18.0.5    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br></code></pre></td></tr></table></figure>
+
+<p> 观察到前面操作的节点 <code>crio-hello-cluster-worker</code> 已经进入 <code>NotReady</code> 状态，CONTAINER-RUNTIME 为 <code>containerd://Unknown</code> 。</p>
+</li>
+<li><p>使用 <code>kubeadm join</code> 将节点加入集群</p>
+<p> 此时，为了将工作节点重新加入此集群，需要先在MasterNode上生成token：</p>
+<blockquote>
+<p>此命令在MasterNode中执行。记得关闭代理，否则无法加入。可以 <code>unset http_proxy &amp;&amp; unset https_proxy</code>。如果添加环境变量 <code>export no_proxy=&quot;localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12&quot;</code> ，测试即使重启也无效。</p>
+</blockquote>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ kubeadm token create --print-join-command<br>kubeadm <span class="hljs-built_in">join</span> crio-hello-cluster-control-plane:6443 --token xeogi6.plnsolw9cd8457mc --discovery-token-ca-cert-hash sha256:0f84c44d447641f23345cd8269a27645fe149d19028a6afe6a07f0b7aac191c5 <br></code></pre></td></tr></table></figure>
+
+<p> 但在 WorkerNode上执行返回的命令，会报错，提示预检错误，表明kubelet在执行系统验证时尝试加载名为“configs”的内核模块以解析内核配置，但未能在 <code>/lib/modules/5.15.0-92-generic</code> 目录下找到该模块。</p>
+<blockquote>
+<p>以下命令在WorkerNode <code>crio-hello-cluster-worker</code>上执行</p>
+</blockquote>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@hello-crio-worker:/home<span class="hljs-comment"># kubeadm join crio-hello-cluster-control-plane:6443 --token xeogi6.plnsolw9cd8457mc --discovery-token-ca-cert-hash sha256:0f84c44d447641f23345cd8269a27645fe149d19028a6afe6a07f0b7aac191c5 </span><br>[preflight] Running pre-flight checks<br>    [WARNING Swap]: swap is supported <span class="hljs-keyword">for</span> cgroup v2 only; the NodeSwap feature gate of the kubelet is beta but disabled by default<br>    [WARNING FileExisting-socat]: socat not found <span class="hljs-keyword">in</span> system path<br>[preflight] The system verification failed. Printing the output from the verification:<br>...<br>error execution phase preflight: [preflight] Some fatal errors occurred:<br>    [ERROR SystemVerification]: failed to parse kernel config: unable to load kernel module: <span class="hljs-string">&quot;configs&quot;</span>, output: <span class="hljs-string">&quot;modprobe: FATAL: Module configs not found in directory /lib/modules/5.15.0-92-generic\n&quot;</span>, err: <span class="hljs-built_in">exit</span> status 1<br>[preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`<br>To see the stack trace of this error execute with --v=5 or higher<br></code></pre></td></tr></table></figure>
+
+<p> 暂时有两个解决办法：</p>
+<ul>
+<li>忽略问题。<a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/issues/41025"><code>https://github.com/kubernetes/kubernetes/issues/41025</code></a></li>
+<li>升级内核镜像、配置容器。<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/54128045/errors-while-creating-master-in-cluster-of-kubernetes-in-lxc-container"><code>https://stackoverflow.com/questions/54128045/errors-while-creating-master-in-cluster-of-kubernetes-in-lxc-container</code></a></li>
+</ul>
+<p> 目前采用的是忽略问题，暂时无法判断使用此选项的后续问题。加上忽略错误，节点添加成功！</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ kubeadm <span class="hljs-built_in">join</span> crio-hello-cluster-control-plane:6443 --token xeogi6.plnsolw9cd8457mc --discovery-token-ca-cert-hash sha256:0f84c44d447641f23345cd8269a27645fe149d19028a6afe6a07f0b7aac191c5 --ignore-preflight-errors=SystemVerification<br><br>[preflight] Running pre-flight checks<br>    [WARNING Swap]: swap is supported <span class="hljs-keyword">for</span> cgroup v2 only; the NodeSwap feature gate of the kubelet is beta but disabled by default<br>    [WARNING FileExisting-socat]: socat not found <span class="hljs-keyword">in</span> system path<br>[preflight] The system verification failed. Printing the output from the verification:<br>KERNEL_VERSION: 5.15.0-92-generic<br>OS: Linux<br>...<br>    [WARNING SystemVerification]: failed to parse kernel config: unable to load kernel module: <span class="hljs-string">&quot;configs&quot;</span>, output: <span class="hljs-string">&quot;modprobe: FATAL: Module configs not found in directory /lib/modules/5.15.0-92-generic\n&quot;</span>, err: <span class="hljs-built_in">exit</span> status 1<br>[preflight] Reading configuration from the cluster...<br>[preflight] FYI: You can look at this config file with <span class="hljs-string">&#x27;kubectl -n kube-system get cm kubeadm-config -o yaml&#x27;</span><br>[kubelet-start] Writing kubelet configuration to file <span class="hljs-string">&quot;/var/lib/kubelet/config.yaml&quot;</span><br>[kubelet-start] Writing kubelet environment file with flags to file <span class="hljs-string">&quot;/var/lib/kubelet/kubeadm-flags.env&quot;</span><br>[kubelet-start] Starting the kubelet<br>[kubelet-start] Waiting <span class="hljs-keyword">for</span> the kubelet to perform the TLS Bootstrap...<br><br>This node has joined the cluster:<br>* Certificate signing request was sent to apiserver and a response was received.<br>* The Kubelet was informed of the new secure connection details.<br><br>Run <span class="hljs-string">&#x27;kubectl get nodes&#x27;</span> on the control-plane to see this node <span class="hljs-built_in">join</span> the cluster.<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>检查集群状态</p>
+<p> 从宿主机进入MasterNode</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">yzq@ubuntu$ docker <span class="hljs-built_in">exec</span> -it crio-hello-cluster-control-plane /bin/bash<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>以下命令在 <code>crio-hello-cluster-control-plane</code> 中执行</p>
+</blockquote>
+<p> 检查节点状态，节点 <code>crio-hello-cluster-worker</code> 已处于 <code>Ready</code> 状态，容器运行时已切换为 <code>cri-o://1.24.6</code> 。</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ kubectl get nodes -owide<br>NAME                               STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION      CONTAINER-RUNTIME<br>crio-hello-cluster-control-plane   Ready    control-plane   106m   v1.29.0   172.18.0.6    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br>crio-hello-cluster-worker          Ready    &lt;none&gt;          11s    v1.29.0   172.18.0.7    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   cri-o://1.24.6<br>crio-hello-cluster-worker2         Ready    &lt;none&gt;          106m   v1.29.0   172.18.0.5    &lt;none&gt;        Debian GNU/Linux 11 (bullseye)   5.15.0-92-generic   containerd://1.7.1<br></code></pre></td></tr></table></figure>
+
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ kubectl get nodes -o json | jq -r <span class="hljs-string">&#x27;.items[] | &#123;Name: .metadata.name, ContainerRuntime: .status.nodeInfo.containerRuntimeVersion&#125;&#x27;</span><br>&#123;<br><span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;crio-hello-cluster-control-plane&quot;</span>,<br><span class="hljs-string">&quot;ContainerRuntime&quot;</span>: <span class="hljs-string">&quot;containerd://1.7.1&quot;</span><br>&#125;<br>&#123;<br><span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;crio-hello-cluster-worker&quot;</span>,<br><span class="hljs-string">&quot;ContainerRuntime&quot;</span>: <span class="hljs-string">&quot;cri-o://1.24.6&quot;</span><br>&#125;<br>&#123;<br><span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;crio-hello-cluster-worker2&quot;</span>,<br><span class="hljs-string">&quot;ContainerRuntime&quot;</span>: <span class="hljs-string">&quot;containerd://1.7.1&quot;</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="2-3-自己构建-kind-node-镜像"><a href="#2-3-自己构建-kind-node-镜像" class="headerlink" title="2.3 自己构建 kind node 镜像"></a>2.3 自己构建 <code>kind node</code> 镜像</h3><p>后续文章尝试</p>
+<hr>
+<h2 id="BUG"><a href="#BUG" class="headerlink" title="BUG"></a>BUG</h2><h3 id="以前的配置无法创建集群"><a href="#以前的配置无法创建集群" class="headerlink" title="以前的配置无法创建集群"></a>以前的配置无法创建集群</h3><p>中途突然无法启动kubelet，任何多节点的集群都无法创建，即使使用前面博客文章的配置文件也无法创建集群，提示kubelet无法启动。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ bash create.sh -name <span class="hljs-built_in">test</span><br>cluster-name: ame<br>Creating cluster <span class="hljs-string">&quot;ame&quot;</span> ...<br> ✓ Ensuring node image (kindest/node:v1.29.0) 🖼<br> ✓ Preparing nodes 📦 📦 📦  <br> ✓ Writing configuration 📜 <br> ✗ Starting control-plane 🕹️ <br>Deleted nodes: [<span class="hljs-string">&quot;ame-worker&quot;</span> <span class="hljs-string">&quot;ame-worker2&quot;</span> <span class="hljs-string">&quot;ame-control-plane&quot;</span>]<br>ERROR: failed to create cluster: failed to init node with kubeadm: <span class="hljs-built_in">command</span> <span class="hljs-string">&quot;docker exec --privileged ame-control-plane kubeadm init --skip-phases=preflight --config=/kind/kubeadm.conf --skip-token-print --v=6&quot;</span> failed with error: <span class="hljs-built_in">exit</span> status 1<br>Command Output: I0125 11:40:19.477864     172 initconfiguration.go:260] loading configuration from <span class="hljs-string">&quot;/kind/kubeadm.conf&quot;</span><br>···<br>[control-plane] Creating static Pod manifest <span class="hljs-keyword">for</span> <span class="hljs-string">&quot;kube-apiserver&quot;</span><br>I0125 11:40:24.816401     172 local.go:65] [etcd] wrote Static Pod manifest <span class="hljs-keyword">for</span> a <span class="hljs-built_in">local</span> etcd member to <span class="hljs-string">&quot;/etc/kubernetes/manifests/etcd.yaml&quot;</span><br>···<br>[control-plane] Creating static Pod manifest <span class="hljs-keyword">for</span> <span class="hljs-string">&quot;kube-controller-manager&quot;</span><br>I0125 11:40:24.820970     172 manifests.go:157] [control-plane] wrote static Pod manifest <span class="hljs-keyword">for</span> component <span class="hljs-string">&quot;kube-controller-manager&quot;</span> to <span class="hljs-string">&quot;/etc/kubernetes/manifests/kube-controller-manager.yaml&quot;</span><br>I0125 11:40:24.821181     172 manifests.go:102] [control-plane] getting StaticPodSpecs<br>[control-plane] Creating static Pod manifest <span class="hljs-keyword">for</span> <span class="hljs-string">&quot;kube-scheduler&quot;</span><br>I0125 11:40:24.821653     172 manifests.go:128] [control-plane] adding volume <span class="hljs-string">&quot;kubeconfig&quot;</span> <span class="hljs-keyword">for</span> component <span class="hljs-string">&quot;kube-scheduler&quot;</span><br>I0125 11:40:24.822478     172 manifests.go:157] [control-plane] wrote static Pod manifest <span class="hljs-keyword">for</span> component <span class="hljs-string">&quot;kube-scheduler&quot;</span> to <span class="hljs-string">&quot;/etc/kubernetes/manifests/kube-scheduler.yaml&quot;</span><br>I0125 11:40:24.822522     172 kubelet.go:68] Stopping the kubelet<br>[kubelet-start] Writing kubelet environment file with flags to file <span class="hljs-string">&quot;/var/lib/kubelet/kubeadm-flags.env&quot;</span><br>[kubelet-start] Writing kubelet configuration to file <span class="hljs-string">&quot;/var/lib/kubelet/config.yaml&quot;</span><br>[kubelet-start] Starting the kubelet<br>I0125 11:40:24.982554     172 waitcontrolplane.go:83] [wait-control-plane] Waiting <span class="hljs-keyword">for</span> the API server to be healthy<br>I0125 11:40:24.983290     172 loader.go:395] Config loaded from file:  /etc/kubernetes/admin.conf<br>[wait-control-plane] Waiting <span class="hljs-keyword">for</span> the kubelet to boot up the control plane as static Pods from directory <span class="hljs-string">&quot;/etc/kubernetes/manifests&quot;</span>. This can take up to 4m0s<br>I0125 11:40:24.985303     172 round_trippers.go:553] GET https://ame-control-plane:6443/healthz?<span class="hljs-built_in">timeout</span>=10s  <span class="hljs-keyword">in</span> 0 milliseconds<br>···<br>[kubelet-check] Initial <span class="hljs-built_in">timeout</span> of 40s passed.<br>I0125 11:41:04.986148     172 round_trippers.go:553] GET https://ame-control-plane:6443/healthz?<span class="hljs-built_in">timeout</span>=10s  <span class="hljs-keyword">in</span> 0 milliseconds<br>[kubelet-check] It seems like the kubelet isn<span class="hljs-string">&#x27;t running or healthy.</span><br><span class="hljs-string">[kubelet-check] The HTTP call equal to &#x27;</span>curl -sSL http://localhost:10248/healthz<span class="hljs-string">&#x27; failed with error: Get &quot;http://localhost:10248/healthz&quot;: dial tcp [::1]:10248: connect: connection refused.</span><br><span class="hljs-string">I0125 11:41:05.487445     172 round_trippers.go:553] GET https://ame-control-plane:6443/healthz?timeout=10s  in 0 milliseconds</span><br><span class="hljs-string">···</span><br><span class="hljs-string">[kubelet-check] It seems like the kubelet isn&#x27;</span>t running or healthy.<br>[kubelet-check] The HTTP call equal to <span class="hljs-string">&#x27;curl -sSL http://localhost:10248/healthz&#x27;</span> failed with error: Get <span class="hljs-string">&quot;http://localhost:10248/healthz&quot;</span>: dial tcp [::1]:10248: connect: connection refused.<br>I0125 11:41:10.486636     172 round_trippers.go:553] GET https://ame-control-plane:6443/healthz?<span class="hljs-built_in">timeout</span>=10s  <span class="hljs-keyword">in</span> 0 milliseconds<br>···<br>[kubelet-check] It seems like the kubelet isn<span class="hljs-string">&#x27;t running or healthy.</span><br><span class="hljs-string">[kubelet-check] The HTTP call equal to &#x27;</span>curl -sSL http://localhost:10248/healthz<span class="hljs-string">&#x27; failed with error: Get &quot;http://localhost:10248/healthz&quot;: dial tcp [::1]:10248: connect: connection refused.</span><br><span class="hljs-string">I0125 11:41:20.486427     172 round_trippers.go:553] GET https://ame-control-plane:6443/healthz?timeout=10s  in 0 milliseconds</span><br><span class="hljs-string">···</span><br><span class="hljs-string">couldn&#x27;</span>t initialize a Kubernetes cluster<br>[kubelet-check] It seems like the kubelet isn<span class="hljs-string">&#x27;t running or healthy.</span><br><span class="hljs-string">[kubelet-check] The HTTP call equal to &#x27;</span>curl -sSL http://localhost:10248/healthz<span class="hljs-string">&#x27; failed with error: Get &quot;http://localhost:10248/healthz&quot;: dial tcp [::1]:10248: connect: connection refused.</span><br><span class="hljs-string"></span><br><span class="hljs-string">Unfortunately, an error has occurred:</span><br><span class="hljs-string">	timed out waiting for the condition</span><br><span class="hljs-string"></span><br><span class="hljs-string">This error is likely caused by:</span><br><span class="hljs-string">	- The kubelet is not running</span><br><span class="hljs-string">	- The kubelet is unhealthy due to a misconfiguration of the node in some way (required cgroups disabled)</span><br><span class="hljs-string">···</span><br></code></pre></td></tr></table></figure>
+
+<p>先后检查了节点的 <code>kubelet status</code>、 <code>api-server</code>、 <code>container runtime</code> 等，无问题，最后参考 <a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/kind/issues/2702"><code>https://github.com/kubernetes-sigs/kind/issues/2702</code></a> ，可能是资源占用太大，因此删除了之前的集群，重新建立，错误解决。</p>
+<h3 id="使用-kind-crio-镜像无法创建集群"><a href="#使用-kind-crio-镜像无法创建集群" class="headerlink" title="使用 kind-crio 镜像无法创建集群"></a>使用 kind-crio 镜像无法创建集群</h3><p>使用 <a target="_blank" rel="noopener" href="https://github.com/warm-metal/kindest-base-crio/tree/main"><code>https://github.com/warm-metal/kindest-base-crio/tree/main</code></a> 提供的镜像，依然提示 kubelet 无法连接，错误同上。</p>
+<p>查阅<a target="_blank" rel="noopener" href="https://hub.docker.com/r/warmmetal/kindest-node-crio"><code>https://hub.docker.com/r/warmmetal/kindest-node-crio</code></a>，该镜像最近一个月更新过，但即使使用最新的也无法创建集群。 <a target="_blank" rel="noopener" href="https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2"><code>https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2</code></a> 提到可能是 kind 和 k8s 更新太快，兼容性被打破，因此本实验抛弃了使用该仓库的镜像 <code>kindest-base-crio</code> 的方案。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/kubelabs/" class="category-chain-item">kubelabs</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/k8s/" class="print-no-link">#k8s</a>
+      
+        <a href="/tags/cri/" class="print-no-link">#cri</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时</div>
+      <div>https://artistzq.github.io/2024/01/26/k8s学习总结_3_CRI/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>姚宗庆</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年1月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_2_CNI/" title="kubelabs——k8s学习与实验【2】容器网络接口（CNI）以及切换CNI插件">
+                        <span class="hidden-mobile">kubelabs——k8s学习与实验【2】容器网络接口（CNI）以及切换CNI插件</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

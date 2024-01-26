@@ -224,15 +224,78 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2024/01/26/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_3_CRI/" target="_blank">
+          kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/26/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_3_CRI/" target="_blank">
+        <div>
+          kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时1 概念容器运行时（Container Runtime）是 Kubernetes（k8s）集群中每个节点的核心组件，负责管理容器的整个生命周期，包括从拉取和运行容器镜像等关键任务。     在k8s 1.23版本之前，kubelet依赖于dockershim来操作Docker容器运行时。Docker内部集成了con
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-01-26 23:17" pubdate>
+              2024-01-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/kubelabs/" class="category-chain-item">kubelabs</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/k8s/">#k8s</a>
+            
+              <a href="/tags/cri/">#cri</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_2_CNI/" target="_blank">
-          K8s学习总结——【二】 容器网络接口（CNI）
+          kubelabs——k8s学习与实验【2】容器网络接口（CNI）以及切换CNI插件
         </a>
       </h2>
 
       
       <a class="index-excerpt index-excerpt__noimg" href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_2_CNI/" target="_blank">
         <div>
-          CNI概念Container Network Interface（CNI），即容器网络接口，是一种标准化的API规范，旨在为容器提供一致且灵活的网络配置方案。在Kubernetes环境中，Kubelet通过调用遵循CNI标准的API与各类网络插件进行交互，以实现容器间多样化的网络连接与管理。接口定义的基本操作包括 ADD 和 DEL 等，负责将Pod添加到网络和从网络中删除。 k8s通过配置文件来
+          kubelabs——k8s学习与实验【2】容器网络接口（CNI）以及切换CNI插件概念Container Network Interface（CNI），即容器网络接口，是一种标准化的API规范，旨在为容器提供一致且灵活的网络配置方案。在Kubernetes环境中，Kubelet通过调用遵循CNI标准的API与各类网络插件进行交互，以实现容器间多样化的网络连接与管理。接口定义的基本操作包括 ADD
         </div>
       </a>
 
@@ -246,11 +309,34 @@
           </div>
         
         
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/kubelabs/" class="category-chain-item">kubelabs</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
         
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/K8s/">#K8s</a>
+              <a href="/tags/k8s/">#k8s</a>
+            
+              <a href="/tags/cni/">#cni</a>
             
           </div>
         
@@ -265,14 +351,14 @@
       <h2 class="index-header">
         
         <a href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_1_%E6%90%AD%E5%BB%BA%E6%9C%AC%E5%9C%B0%E9%9B%86%E7%BE%A4/" target="_blank">
-          K8s学习总结——【一】 搭建本地集群
+          kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群
         </a>
       </h2>
 
       
       <a class="index-excerpt index-excerpt__noimg" href="/2024/01/14/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_1_%E6%90%AD%E5%BB%BA%E6%9C%AC%E5%9C%B0%E9%9B%86%E7%BE%A4/" target="_blank">
         <div>
-          K8s学习总结——【一】 搭建本地集群1 概念总结1.1 kubernetes（k8s） kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。 理解： 现在的大型程序被分割为多个服务，各自运行在单独的容器里。 为了提升性能和可用性，多个容器需要分散在多个物理机器上，并拥有备份。 多个服务和容器需要通信 k8s用于自动化管理此系统。    1.2 组成物理层面 Master节点
+          kubelabs——k8s学习与实验【1】使用 kind 搭建本地集群1 概念总结1.1 kubernetes（k8s） kubernetes（k8s）是用于管理云平台中的多个容器化应用的工具。 理解： 现在的大型程序被分割为多个服务，各自运行在单独的容器里。 为了提升性能和可用性，多个容器需要分散在多个物理机器上，并拥有备份。 多个服务和容器需要通信 k8s用于自动化管理此系统。    1.2
         </div>
       </a>
 
@@ -286,11 +372,34 @@
           </div>
         
         
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/kubelabs/" class="category-chain-item">kubelabs</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
         
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/K8s/">#K8s</a>
+              <a href="/tags/k8s/">#k8s</a>
+            
+              <a href="/tags/kind/">#kind</a>
             
           </div>
         
