@@ -1,0 +1,815 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yao.zq">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验1 相关概念简介上一篇文章中介绍了 Kubernetes 存储相关的概念，并进行了实验。本篇文章更详细地介绍其中的 PV 和 PVC 的持久化方式，并引入 CSI（Container Storage Interface）的概念。 1.1 StorageClass上一篇文章提到，PVC 用来描述 pod 希望">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验">
+<meta property="og:url" content="https://artistzq.github.io/2024/02/10/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_5_CSI/index.html">
+<meta property="og:site_name" content="Yao&#39;s blog">
+<meta property="og:description" content="kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验1 相关概念简介上一篇文章中介绍了 Kubernetes 存储相关的概念，并进行了实验。本篇文章更详细地介绍其中的 PV 和 PVC 的持久化方式，并引入 CSI（Container Storage Interface）的概念。 1.1 StorageClass上一篇文章提到，PVC 用来描述 pod 希望">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240209143746.png">
+<meta property="article:published_time" content="2024-02-10T13:10:15.000Z">
+<meta property="article:modified_time" content="2024-02-10T13:19:02.345Z">
+<meta property="article:author" content="Yao.zq">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="csi">
+<meta property="article:tag" content="nfs">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240209143746.png">
+  
+  
+  
+  <title>kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验 - Yao&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"artistzq.github.io","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2,"ground_glass":{"enable":true,"px":3,"alpha":0.7}},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>姚宗庆的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/cover.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-02-10 21:10" pubdate>
+          2024年2月10日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          30 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS-CSI-插件实验"><a href="#kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS-CSI-插件实验" class="headerlink" title="kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验"></a>kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验</h1><h2 id="1-相关概念简介"><a href="#1-相关概念简介" class="headerlink" title="1 相关概念简介"></a>1 相关概念简介</h2><p>上一篇文章中介绍了 Kubernetes 存储相关的概念，并进行了实验。本篇文章更详细地介绍其中的 PV 和 PVC 的持久化方式，并引入 CSI（Container Storage Interface）的概念。</p>
+<h3 id="1-1-StorageClass"><a href="#1-1-StorageClass" class="headerlink" title="1.1 StorageClass"></a>1.1 StorageClass</h3><p>上一篇文章提到，PVC 用来描述 pod 希望使用的 PV 的属性，比如大小，读写权限等等。用户只需要关注 PVC ，VolumeController 的 PersistVolumeController 会根据 PVC 去寻找匹配的 PV 进行绑定。PV 资源的创建是我们手动创建的本地卷。</p>
+<p>在实际生产中，手动创建并提供 PV 限制了部署的灵活性。StorageClass是为了解决 PV 的供应（Provisioning）问题，例如，当集群管理员创建的 PV 中，任何一个都无法满足 PVC 的需求，Kubernetes 系统就会动态创建 PV 。这一动态供应（Dynamic Provisioning） 过程由 Storage Class负责，如下图所示。</p>
+<p><img src="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240209143746.png" srcset="/img/loading.gif" lazyload alt="storage-class"></p>
+<h3 id="1-2-CSI"><a href="#1-2-CSI" class="headerlink" title="1.2 CSI"></a>1.2 CSI</h3><p>CSI 是一个用于为 Kubernetes 集群提供持久化存储的标准接口。在 CSI 之前，扩展存储插件功能的方式相对复杂且不统一。CSI 推出之后，类似 CNI、CRI，该接口提供规范，第三方存储供应商（如云提供商和存储厂商）按照此规范设计插件，Kubernetes 可以使用该插件创建和管理持久化存储，从而支持更多的存储解决方案，如块存储、文件存储或对象存储。CSI 插件通过 grpc 与 Kubernetes 的系统组件进行通信。</p>
+<blockquote>
+<p>kubelet不直接调用CSI接口来管理PV的整个生命周期。Kubernetes中的控制器组件（如CSI Provisioner(external-provisioner)和CSI Attacher）才是直接与CSI驱动程序交互，负责动态地根据PVC的需求进行PV的供应（Provisioning）、绑定（Binding）及挂载到节点上。</p>
+</blockquote>
+<p>CSI 主要由两个部分组成：在控制节点的 CSI Provisioner 和 工作节点的 CSI Plugin。</p>
+<p>CSI Provisioner 运行在 Kubernetes 集群的控制平面节点上，通常是在集群的管理服务器上。其主要功能是处理存储卷的高级生命周期管理和自动化操作。如创建、删除 （PV）或动态供应 PVC 时所需的存储资源。CSI 控制器插件通过监听 Kubernetes API 对象的变化并与之交互来实现上述功能。它们使用 gRPC 接口与 Kubernetes 控制器管理器进行通信。</p>
+<p>CSI Plugin 部署在每个 Kubernetes 工作节点上，它们负责执行与存储卷挂载到节点本地以及卸载存储卷相关的低级操作。<br>包括：</p>
+<ul>
+<li>将远程或网络存储资源在节点上实际挂载为文件系统或者作为原始块设备。</li>
+<li>在 Pod 创建或调度到该节点时，根据 PVC 请求将合适的 PV 挂载到Pod容器内。</li>
+<li>当 Pod 销毁或者从节点上移除时，执行对应的 detach 操作，从节点上卸载存储卷。</li>
+</ul>
+<p>同样地，CSI 节点插件也是通过 gRPC 接口与 Kubernetes 节点上的 kubelet 进程进行通信，kubelet 根据 Pod 的定义信息请求 CSI 插件完成具体的存储操作。</p>
+<p>常见的 CSI 插件（CSI Driver）包括：</p>
+<ul>
+<li><strong>AWS EBS CSI Driver</strong><br>该 CSI 驱动允许 Kubernetes 用户在 AWS 上动态创建和管理基于块存储的 PersistentVolumes。</li>
+<li><strong>Google Cloud Persistent Disk (GCP PD) CSI Driver</strong><br>Google Cloud Platform 提供的 CSI 驱动。</li>
+<li><strong>Azure Disk CSI Driver</strong><br>Microsoft Azure 的 CSI 驱动程序，让 Kubernetes 能够与 Azure 磁盘服务进行交互，提供块存储给集群内的 Pod 使用。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/alibaba-cloud-csi-driver"><strong>Alibaba Cloud Kubernetes CSI Plugin（ACK）</strong></a><br>阿里云提供了自家云平台上的多种存储产品（如块存储EBS、文件存储NAS等）对应的 CSI 驱动，便于 Kubernetes 用户无缝地使用阿里云存储资源。</li>
+<li><strong>NFS CSI Driver</strong><br>针对网络文件系统 (NFS) 的 CSI 驱动插件，可以自动配置 NFS 卷并将其挂载到 Kubernetes Pods 中</li>
+</ul>
+<h2 id="2-实验"><a href="#2-实验" class="headerlink" title="2 实验"></a>2 实验</h2><p>在本地的 kubernetes 集群上使用阿里云的 CSI 插件使用有一系列的前置工作，如：</p>
+<ul>
+<li>接入VNode</li>
+<li>集群各主机通过VPN接入阿里云ECI</li>
+<li>…</li>
+</ul>
+<blockquote>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://help.aliyun.com/zh/eci/user-guide/overview-5?spm=a2c4g.11186623.0.0.3e6c72a5IjaDwp"><code>https://help.aliyun.com/zh/eci/user-guide/overview-5?spm=a2c4g.11186623.0.0.3e6c72a5IjaDwp</code></a></p>
+</blockquote>
+<p>我们本地是由 kind 搭建的集群，集群节点是 docker 容器，在第一篇博客中就曾因为宿主机配置了代理产生了较复杂的问题；如果将 kind 集群接入ECI，相当于本地网络还要经过一层docker网络，比较复杂。我们的学习博客目标在于通过实验初步地了解相关组件原理和效果，暂不需要使用复杂度较高的适用于生产环境的组件，因此这里暂不使用阿里云 CSI，转而使用普通的NFS CSI Driver进行试验。</p>
+<blockquote>
+<p>后续博客中会尝试阿里云 CSI 插件。</p>
+</blockquote>
+<p>我们继续沿用上一篇博客创建的 kind 集群 <code>storage-cluster</code>。</p>
+<h3 id="2-1-安装-NFS-Server"><a href="#2-1-安装-NFS-Server" class="headerlink" title="2.1 安装 NFS Server"></a>2.1 安装 NFS Server</h3><p>新建一个docker容器，并将其加入到集群的docker容器的网络中，以便直接通信。</p>
+<p>查看集群的网络：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker inspect --format=<span class="hljs-string">&#x27;&#123;&#123;json .NetworkSettings.Networks&#125;&#125;&#x27;</span> storage-cluster-worker<br>&#123;<span class="hljs-string">&quot;kind&quot;</span>:&#123;<span class="hljs-string">&quot;IPAMConfig&quot;</span>:null,<span class="hljs-string">&quot;Links&quot;</span>:null,<span class="hljs-string">&quot;Aliases&quot;</span>:[<span class="hljs-string">&quot;1cfe2d76e6f7&quot;</span>,<span class="hljs-string">&quot;storage-cluster-worker&quot;</span>],<span class="hljs-string">&quot;NetworkID&quot;</span>:<span class="hljs-string">&quot;53a809b86d8fe0fef419b8a1a05feaf3be95a8681f6d2787ecd536a0b4d575ae&quot;</span>,<span class="hljs-string">&quot;EndpointID&quot;</span>:<span class="hljs-string">&quot;4414964e344455622be8137404c0e78d64f4685129303101277091ec38e431a3&quot;</span>,<span class="hljs-string">&quot;Gateway&quot;</span>:<span class="hljs-string">&quot;172.18.0.1&quot;</span>,<span class="hljs-string">&quot;IPAddress&quot;</span>:<span class="hljs-string">&quot;172.18.0.4&quot;</span>,<span class="hljs-string">&quot;IPPrefixLen&quot;</span>:16,<span class="hljs-string">&quot;IPv6Gateway&quot;</span>:<span class="hljs-string">&quot;fc00:f853:ccd:e793::1&quot;</span>,<span class="hljs-string">&quot;GlobalIPv6Address&quot;</span>:<span class="hljs-string">&quot;fc00:f853:ccd:e793::4&quot;</span>,<span class="hljs-string">&quot;GlobalIPv6PrefixLen&quot;</span>:64,<span class="hljs-string">&quot;MacAddress&quot;</span>:<span class="hljs-string">&quot;02:42:ac:12:00:04&quot;</span>,<span class="hljs-string">&quot;DriverOpts&quot;</span>:null&#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>我们直接部署容器化的 NFS 服务器，使用 10M+ 下载量的镜像 <a target="_blank" rel="noopener" href="https://hub.docker.com/r/itsthenetwork/nfs-server-alpine"><code>itsthenetwork/nfs-server-alpine</code></a> 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker pull itsthenetwork/nfs-server-alpine<br></code></pre></td></tr></table></figure>
+
+<p>创建容器 <code>nfs-server</code> ，将宿主机上的 <code>/home/nfsshare</code> 挂载到 NFS 服务器中的 <code>/nfsshare</code>目录。</p>
+<blockquote>
+<p>宿主机对应的是20049端口，因为宿主机使通过VMWARE虚拟的Ubuntu，本身2049已经被占用了。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker volume create --name nfs-volume<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker run \<br>--name nfs-server \<br>--privileged \<br>--restart=unless-stopped \<br>-p 2049:2049 \<br>-v nfs-volume:/nfsshare \<br>-e SHARED_DIRECTORY=/nfsshare \<br>--network kind \<br>itsthenetwork/nfs-server-alpine<br></code></pre></td></tr></table></figure>
+
+<p>查看现在的容器，有一个nfs-server容器，另外三个容器是kind集群创建的三个节点，这4个容器在同一个网络中。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker ps<br>CONTAINER ID   IMAGE                             COMMAND                  CREATED          STATUS         PORTS                                         NAMES<br>9b95c2f7a0eb   itsthenetwork/nfs-server-alpine   <span class="hljs-string">&quot;/usr/bin/nfsd.sh&quot;</span>       13 minutes ago   Up 3 minutes   0.0.0.0:20049-&gt;2049/tcp, :::20049-&gt;2049/tcp   nfs-server<br>1cfe2d76e6f7   kindest/node:v1.29.0              <span class="hljs-string">&quot;/usr/local/bin/entr…&quot;</span>   21 hours ago     Up 3 minutes                                                 storage-cluster-worker<br>34309581dffe   kindest/node:v1.29.0              <span class="hljs-string">&quot;/usr/local/bin/entr…&quot;</span>   21 hours ago     Up 3 minutes   127.0.0.1:42707-&gt;6443/tcp                     storage-cluster-control-plane<br>f998b1033432   kindest/node:v1.29.0              <span class="hljs-string">&quot;/usr/local/bin/entr…&quot;</span>   21 hours ago     Up 3 minutes                                                 storage-cluster-worker2<br><br></code></pre></td></tr></table></figure>
+
+<p>查看 <code>kind</code> 网络下的容器。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker network inspect kind | jq <span class="hljs-string">&#x27;.[0].Containers | to_entries[] | .value&#x27;</span><br>&#123;<br>  <span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;storage-cluster-worker2&quot;</span>,<br>  <span class="hljs-string">&quot;EndpointID&quot;</span>: <span class="hljs-string">&quot;407df86e981930be8277f91f855b9a30e8db9dd26d230dbd00f68f13ff2ae2c2&quot;</span>,<br>  <span class="hljs-string">&quot;MacAddress&quot;</span>: <span class="hljs-string">&quot;02:42:ac:12:00:05&quot;</span>,<br>  <span class="hljs-string">&quot;IPv4Address&quot;</span>: <span class="hljs-string">&quot;172.18.0.5/16&quot;</span>,<br>  <span class="hljs-string">&quot;IPv6Address&quot;</span>: <span class="hljs-string">&quot;fc00:f853:ccd:e793::5/64&quot;</span><br>&#125;<br>&#123;<br>  <span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;nfs-server&quot;</span>,<br>  <span class="hljs-string">&quot;EndpointID&quot;</span>: <span class="hljs-string">&quot;c64dbe8c9d36c2f75784ccfe51aa854a75536402cf89cd58042959403623f95c&quot;</span>,<br>  <span class="hljs-string">&quot;MacAddress&quot;</span>: <span class="hljs-string">&quot;02:42:ac:12:00:02&quot;</span>,<br>  <span class="hljs-string">&quot;IPv4Address&quot;</span>: <span class="hljs-string">&quot;172.18.0.2/16&quot;</span>,<br>  <span class="hljs-string">&quot;IPv6Address&quot;</span>: <span class="hljs-string">&quot;fc00:f853:ccd:e793::2/64&quot;</span><br>&#125;<br>&#123;<br>  <span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;storage-cluster-control-plane&quot;</span>,<br>  <span class="hljs-string">&quot;EndpointID&quot;</span>: <span class="hljs-string">&quot;3dd90fe415d89a31ee480970884695768d2bde757d60ddb8b397e220b301f36b&quot;</span>,<br>  <span class="hljs-string">&quot;MacAddress&quot;</span>: <span class="hljs-string">&quot;02:42:ac:12:00:04&quot;</span>,<br>  <span class="hljs-string">&quot;IPv4Address&quot;</span>: <span class="hljs-string">&quot;172.18.0.4/16&quot;</span>,<br>  <span class="hljs-string">&quot;IPv6Address&quot;</span>: <span class="hljs-string">&quot;fc00:f853:ccd:e793::4/64&quot;</span><br>&#125;<br>&#123;<br>  <span class="hljs-string">&quot;Name&quot;</span>: <span class="hljs-string">&quot;storage-cluster-worker&quot;</span>,<br>  <span class="hljs-string">&quot;EndpointID&quot;</span>: <span class="hljs-string">&quot;28d4a47609b70b051e003ef3791c97e09641bae0270b28602a3df49cd3ba725a&quot;</span>,<br>  <span class="hljs-string">&quot;MacAddress&quot;</span>: <span class="hljs-string">&quot;02:42:ac:12:00:03&quot;</span>,<br>  <span class="hljs-string">&quot;IPv4Address&quot;</span>: <span class="hljs-string">&quot;172.18.0.3/16&quot;</span>,<br>  <span class="hljs-string">&quot;IPv6Address&quot;</span>: <span class="hljs-string">&quot;fc00:f853:ccd:e793::3/64&quot;</span><br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>进入 NFS 服务器 <code>nfs-server</code>，在 <code>/nfsshare</code> 目录下写入文件 <code>NFS.txt</code> 备用。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> -it nfs-server bash -c <span class="hljs-string">&#x27;echo &quot;This is NFS&quot; &gt; /nfsshare/NFS.txt&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-检查-NFS-服务"><a href="#2-2-检查-NFS-服务" class="headerlink" title="2.2 检查 NFS 服务"></a>2.2 检查 NFS 服务</h3><p>拉取镜像 <a target="_blank" rel="noopener" href="https://hub.docker.com/r/d3fk/nfs-client"><code>d3fk/nfs-client</code></a> 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker pull d3fk/nfs-client<br></code></pre></td></tr></table></figure>
+
+<p>运行容器 <code>nfs-client</code> ，将容器加入 <code>kind</code> 网络</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker run -itd --name nfs-client --privileged=<span class="hljs-literal">true</span> --net=kind d3fk/nfs-client<br></code></pre></td></tr></table></figure>
+
+<p>进入 <code>nfs-client</code> ，挂载 <code>nfs-server</code> 上的 <code>/nfsshare</code> 到 <code>nfs-client</code> 上的 <code>~/temp</code>。</p>
+<blockquote>
+<p>注意：确保 <code>nfs-client</code> 上存在 <code>~/temp</code> 目录。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker <span class="hljs-built_in">exec</span> -it nfs-client sh<br>mount -t nfs nfs-server:/ ~/temp<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：<a id="anchor1"><a href="#bug1">[1]</a><a> 如果使用命令 <code>mount -t nfs nfs-server:/nfsshare ~/temp</code> 则会提示<strong>目录不存在</strong>。因为这个 <code>nfs-server</code> 镜像设定了 <code>fsid=0</code>，默认挂载的是 <code>nfs-server</code> 中的共享根目录。如果在 <code>nfs-server</code> 上存在 <code>/nfsshare/a-dir</code> 目录，则可以通过命令 <code>mount -t nfs nfs-server:/a-dir ~/temp</code> 将该目录挂载到 <code>nfs-client</code> 的 <code>~/temp</code> 上。</p>
+</blockquote>
+<p>检查挂载 nfs 是否成功。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker <span class="hljs-built_in">exec</span> -it nfs-client sh<br>~ <span class="hljs-comment"># cat ~/temp/NFS.txt </span><br>This is NFS<br></code></pre></td></tr></table></figure>
+
+<p>NFS 服务已经可用。</p>
+<h3 id="2-3-在-k8s-集群安装-NFS-CSI-插件"><a href="#2-3-在-k8s-集群安装-NFS-CSI-插件" class="headerlink" title="2.3 在 k8s 集群安装 NFS CSI 插件"></a>2.3 在 k8s 集群安装 NFS CSI 插件</h3><blockquote>
+<p>kind 节点容器 <code>kindest/node</code> 默认已安装 <code>nfs-common</code> 客户端。</p>
+</blockquote>
+<p>参照文档 <a target="_blank" rel="noopener" href="https://github.com/kubernetes-csi/csi-driver-nfs/blob/master/docs/install-csi-driver-v4.6.0.md"><code>https://github.com/kubernetes-csi/csi-driver-nfs/blob/master/docs/install-csi-driver-v4.6.0.md</code></a>。</p>
+<p>进入 Master 节点 <code>storage-cluster-control-plane</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> -it storage-cluster-control-plane /bin/bash<br></code></pre></td></tr></table></figure>
+
+<p>安装CSI插件</p>
+<blockquote>
+<p>如果有网络障碍，先在宿主机 <code>git clone https://github.com/kubernetes-csi/csi-driver-nfs.git</code> 下载文件，<code>docker cp csi-driver-nfs/ storage-cluster-control-plane:/root/csi-driver-nfs</code> 复制到容器内，<code>cd csi-driver-nfs</code>、<br><code>./deploy/install-driver.sh master local</code>本地安装。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ curl -skSL https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/v4.6.0/deploy/install-driver.sh | bash -s v4.6.0 --<br>use <span class="hljs-built_in">local</span> deploy<br>Installing NFS CSI driver, version: master ...<br>serviceaccount/csi-nfs-controller-sa created<br>serviceaccount/csi-nfs-node-sa created<br>clusterrole.rbac.authorization.k8s.io/nfs-external-provisioner-role created<br>clusterrolebinding.rbac.authorization.k8s.io/nfs-csi-provisioner-binding created<br>csidriver.storage.k8s.io/nfs.csi.k8s.io created<br>deployment.apps/csi-nfs-controller created<br>daemonset.apps/csi-nfs-node created<br>NFS CSI driver installed successfully.<br></code></pre></td></tr></table></figure>
+
+<p>检查 csi 插件状态，卡在了镜像拉取环节。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@storage-cluster-control-plane:~/csi-driver-nfs<span class="hljs-comment"># kubectl -n kube-system get pod -o wide -l app=csi-nfs-node</span><br>NAME                 READY   STATUS         RESTARTS   AGE    IP           NODE                            NOMINATED NODE   READINESS GATES<br>csi-nfs-node-4hj66   0/3     ErrImagePull   0          3m5s   172.18.0.4   storage-cluster-worker          &lt;none&gt;           &lt;none&gt;<br>csi-nfs-node-5qj48   0/3     ErrImagePull   0          3m5s   172.18.0.3   storage-cluster-control-plane   &lt;none&gt;           &lt;none&gt;<br>csi-nfs-node-sz24f   0/3     ErrImagePull   0          3m5s   172.18.0.2   storage-cluster-worker2         &lt;none&gt;           &lt;none&gt;<br></code></pre></td></tr></table></figure>
+
+<p>检查日志</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@storage-cluster-control-plane:~/csi-driver-nfs<span class="hljs-comment"># kubectl describe pod csi-nfs-node-4hj66 -n kube-system</span><br>Name:                 csi-nfs-node-4hj66<br>...<br>  Warning  Failed     85s (x2 over 3m34s)   kubelet            Error: ErrImagePull<br>  Normal   Pulling    85s (x2 over 3m34s)   kubelet            Pulling image <span class="hljs-string">&quot;registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0&quot;</span><br>  Warning  Failed     42s (x2 over 2m51s)   kubelet            Failed to pull image <span class="hljs-string">&quot;registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0&quot;</span>: failed to pull and unpack image <span class="hljs-string">&quot;registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0&quot;</span>: failed to resolve reference <span class="hljs-string">&quot;registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0&quot;</span>: failed to <span class="hljs-keyword">do</span> request: Head <span class="hljs-string">&quot;https://us-west2-docker.pkg.dev/v2/k8s-artifacts-prod/images/sig-storage/csi-node-driver-registrar/manifests/v2.10.0&quot;</span>: dial tcp 108.177.125.82:443: connect: connection refused<br>  Warning  Failed     42s (x2 over 2m51s)   kubelet            Error: ErrImagePull<br>  Normal   Pulling    42s (x2 over 2m51s)   kubelet            Pulling image <span class="hljs-string">&quot;gcr.io/k8s-staging-sig-storage/nfsplugin:canary&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>该安装脚本的核心是使用 <code>kubectl</code> 部署了四个 <code>yaml</code> 文件网络连通性存在障碍，按顺序依次是：</p>
+<ul>
+<li><code>deploy/rbac-csi-nfs.yaml</code></li>
+<li><code>deploy/csi-nfs-driverinfo.yaml</code></li>
+<li><code>deploy/csi-nfs-controller.yaml</code></li>
+<li><code>deploy/csi-nfs-node.yaml</code></li>
+</ul>
+<p>这些文件中指定的镜像包括</p>
+<ul>
+<li><code>registry.k8s.io/sig-storage/csi-provisioner:v4.0.0</code></li>
+<li><code>registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3</code></li>
+<li><code>registry.k8s.io/sig-storage/livenessprobe:v2.12.0</code></li>
+<li><code>gcr.io/k8s-staging-sig-storage/nfsplugin:canary</code></li>
+<li><code>registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0</code></li>
+</ul>
+<p>在 kind 集群中拉去这些镜像时，网络存在连通障碍，因此我们拉取在宿主机中从阿里云镜像中心拉取镜像，并用 <code>docker tag</code> 修改对应的tag，再通过 <code>kind load</code> 加载到集群中。</p>
+<blockquote>
+<p>也可以通过代理进行 docker pull，再使用 <code>kind load</code>，<strong>此处使用代理</strong>。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker pull registry.k8s.io/sig-storage/csi-provisioner:v4.0.0<br>docker pull registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3<br>docker pull registry.k8s.io/sig-storage/livenessprobe:v2.12.0<br>docker pull gcr.io/k8s-staging-sig-storage/nfsplugin:canary<br>docker pull registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0<br><br>kind load docker-image registry.k8s.io/sig-storage/csi-provisioner:v4.0.0            --name storage-cluster       <br>kind load docker-image registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3            --name storage-cluster       <br>kind load docker-image registry.k8s.io/sig-storage/livenessprobe:v2.12.0             --name storage-cluster       <br>kind load docker-image gcr.io/k8s-staging-sig-storage/nfsplugin:canary               --name storage-cluster   <br>kind load docker-image registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.0 --name storage-cluster                   <br></code></pre></td></tr></table></figure>
+
+<p>加载完成后，重新部署 CSI 插件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">yzq@yzq-virtual-machine:~$ docker <span class="hljs-built_in">exec</span> -it storage-cluster-control-plane /bin/bash<br>root@storage-cluster-control-plane:/<span class="hljs-comment"># cd ~/csi-driver-nfs/</span><br>root@storage-cluster-control-plane:~/csi-driver-nfs<span class="hljs-comment"># ./deploy/install-driver.sh master local</span><br></code></pre></td></tr></table></figure>
+
+<p>再次检查 CSI 插件状态，已经部署成功</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@storage-cluster-control-plane:~/csi-driver-nfs<span class="hljs-comment"># kubectl -n kube-system get pod -o wide -l app=csi-nfs-controller</span><br>NAME                                 READY   STATUS    RESTARTS   AGE   IP           NODE                            NOMINATED NODE   READINESS GATES<br>csi-nfs-controller-65df4b8c9-5d7lx   4/4     Running   0          44m   172.18.0.2   storage-cluster-control-plane   &lt;none&gt;           &lt;none&gt;<br>root@storage-cluster-control-plane:~/csi-driver-nfs<span class="hljs-comment"># kubectl -n kube-system get pod -o wide -l app=csi-nfs-node</span><br>NAME                 READY   STATUS    RESTARTS   AGE   IP           NODE                            NOMINATED NODE   READINESS GATES<br>csi-nfs-node-4hj66   3/3     Running   0          8h    172.18.0.4   storage-cluster-worker          &lt;none&gt;           &lt;none&gt;<br>csi-nfs-node-5qj48   3/3     Running   0          8h    172.18.0.2   storage-cluster-control-plane   &lt;none&gt;           &lt;none&gt;<br>csi-nfs-node-sz24f   3/3     Running   0          8h    172.18.0.3   storage-cluster-worker2         &lt;none&gt;           &lt;none&gt;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-4-创建-NFS-类型的-PV"><a href="#2-4-创建-NFS-类型的-PV" class="headerlink" title="2.4 创建 NFS 类型的 PV"></a>2.4 创建 NFS 类型的 PV</h3><p>先创建 Storage Class，它会利用NFS CSI插件动态供应PV。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># nfs-sc.yaml</span><br><span class="hljs-attr">allowVolumeExpansion:</span> <span class="hljs-literal">true</span> <span class="hljs-comment"># 允许扩张</span><br><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">storage.k8s.io/v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">StorageClass</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">nfs-sc</span><br><span class="hljs-attr">provisioner:</span> <span class="hljs-string">nfs.csi.k8s.io</span> <span class="hljs-comment"># 指定 CSI 驱动程序</span><br><span class="hljs-attr">parameters:</span><br>  <span class="hljs-attr">server:</span> <span class="hljs-string">nfs-server</span> <span class="hljs-comment"># NFS 服务器 IP 地址 （Docker 网络）</span><br>  <span class="hljs-attr">share:</span> <span class="hljs-string">/</span> <span class="hljs-comment"># 在NFS服务器上共享的路径</span><br><span class="hljs-attr">reclaimPolicy:</span> <span class="hljs-string">Retain</span> <span class="hljs-comment"># 可根据需要设置为Delete或其他策略</span><br></code></pre></td></tr></table></figure>
+
+<p>保存为 <code>nfs-csi-sc.yaml</code> 并应用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">kubectl apply -f nfs-sc.yaml<br></code></pre></td></tr></table></figure>
+
+<p>再创建 PVC，指定 Storage Class，请求 10MB 空间。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># nfs-pvc</span><br>apiVersion: v1<br>kind: PersistentVolumeClaim<br>metadata:<br>  name: nfs-pvc<br>spec:<br>  accessModes:<br>    - ReadWriteMany <br>  storageClassName: nfs-sc <span class="hljs-comment"># 使用刚才创建的 Storage Class 名</span><br>  resources:<br>    requests:<br>      storage: 10Mi <span class="hljs-comment"># </span><br></code></pre></td></tr></table></figure>
+
+<p>保存为 <code>nfs-pvc.yaml</code> 并应用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">kubectl apply -f nfs-pvc.yaml<br></code></pre></td></tr></table></figure>
+
+<p>检查 PVC 状态：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@storage-cluster-control-plane:~/csi-exp<span class="hljs-comment"># kubectl get pvc</span><br>NAME      STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE<br>nfs-pvc   Pending                                      nfs-sc         &lt;<span class="hljs-built_in">unset</span>&gt;                 2m14s<br>root@storage-cluster-control-plane:~/csi-exp<span class="hljs-comment"># kubectl describe pvc nfs-pvc</span><br>Name:          nfs-pvc<br>Namespace:     default<br>StorageClass:  nfs-sc<br>Status:        Pending<br>Volume:        <br>Labels:        &lt;none&gt;<br>Annotations:   volume.beta.kubernetes.io/storage-provisioner: nfs.csi.k8s.io<br>               volume.kubernetes.io/storage-provisioner: nfs.csi.k8s.io<br>Finalizers:    [kubernetes.io/pvc-protection]<br>Capacity:      <br>Access Modes:  <br>VolumeMode:    Filesystem<br>Used By:       &lt;none&gt;<br>Events:<br>  Type     Reason                Age                    From                                                                               Message<br>  ----     ------                ----                   ----                                                                               -------<br>  Warning  ProvisioningFailed    2m37s (x2 over 2m40s)  nfs.csi.k8s.io_storage-cluster-control-plane_4472bfa5-01fc-4ccd-a3a6-ddf147075886  failed to provision volume with StorageClass <span class="hljs-string">&quot;nfs-sc&quot;</span>: rpc error: code = InvalidArgument desc = invalid parameter <span class="hljs-string">&quot;path&quot;</span> <span class="hljs-keyword">in</span> storage class<br>  Normal   Provisioning          97s (x7 over 2m40s)    nfs.csi.k8s.io_storage-cluster-control-plane_4472bfa5-01fc-4ccd-a3a6-ddf147075886  External provisioner is provisioning volume <span class="hljs-keyword">for</span> claim <span class="hljs-string">&quot;default/nfs-pvc&quot;</span><br>  Warning  ProvisioningFailed    97s (x5 over 2m39s)    nfs.csi.k8s.io_storage-cluster-control-plane_4472bfa5-01fc-4ccd-a3a6-ddf147075886  failed to provision volume with StorageClass <span class="hljs-string">&quot;nfs-sc&quot;</span>: rpc error: code = InvalidArgument desc = invalid parameter <span class="hljs-string">&quot;fsType&quot;</span> <span class="hljs-keyword">in</span> storage class<br>  Warning  ProvisioningFailed    33s                    persistentvolume-controller                                                        storageclass.storage.k8s.io <span class="hljs-string">&quot;nfs-sc&quot;</span> not found<br>  Normal   ExternalProvisioning  3s (x11 over 2m40s)    persistentvolume-controller                                                        Waiting <span class="hljs-keyword">for</span> a volume to be created either by the external provisioner <span class="hljs-string">&#x27;nfs.csi.k8s.io&#x27;</span> or manually by the system administrator. If volume creation is delayed, please verify that the provisioner is running and correctly registered.<br><br></code></pre></td></tr></table></figure>
+
+<p>再创建一个 Pod ，该 Pod 使用创建的 PVC <code>nfs-pvc</code>。该 Pod 持续写入日志</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">apiVersion: v1<br>kind: Pod<br>metadata:<br>  name: nfs-pod<br>spec:<br>  containers:<br>  - name: go-container<br>    image: go-hello-world-image:v0.0.1<br>    volumeMounts:<br>    - mountPath: /mnt/nfs <span class="hljs-comment"># 挂载点</span><br>      name: nfs-volume<br>    <span class="hljs-built_in">command</span>: [<span class="hljs-string">&quot;/bin/sh&quot;</span>, <span class="hljs-string">&quot;-c&quot;</span>]<br>    args:<br>    - <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>; <span class="hljs-keyword">do</span> <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;<span class="hljs-subst">$(date +&#x27;%H:%M:%S&#x27;)</span> Hello World&quot;</span> &gt;&gt; /mnt/nfs/output.txt; <span class="hljs-built_in">sleep</span> 5; <span class="hljs-keyword">done</span> <span class="hljs-comment"># 每5秒向//mnt/nfs/output.txt中追加当前时间和消息</span><br>  volumes:<br>  - name: nfs-volume<br>    persistentVolumeClaim:<br>      claimName: nfs-pvc <span class="hljs-comment"># 绑定 PVC</span><br></code></pre></td></tr></table></figure>
+
+<p>命名为 <code>nfs-pod.yaml</code> 并应用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">kubectl apply -f nfs-pod.yaml<br></code></pre></td></tr></table></figure>
+
+<p>检查 pod 状态：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">kubectl get pod<br>NAME      READY   STATUS    RESTARTS   AGE<br>nfs-pod   1/1     Running   0          26s<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-5-检查-NFS-PV-的挂载"><a href="#2-5-检查-NFS-PV-的挂载" class="headerlink" title="2.5 检查 NFS PV 的挂载"></a>2.5 检查 NFS PV 的挂载</h3><p>进入Pod <code>nfs-pod</code>，检查目录 <code>/mnt/nfs/</code> 目录下的 <code>output.txt</code> 文件，文件无误。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@storage-cluster-control-plane:~/csi-exp<span class="hljs-comment"># kubectl exec -it nfs-pod -- sh -c &quot;tail /mnt/nfs/output.txt&quot;</span><br>11:57:12 Hello World<br>11:57:17 Hello World<br>11:57:22 Hello World<br>11:57:27 Hello World<br>11:57:32 Hello World<br>11:57:37 Hello World<br>11:57:42 Hello World<br>11:57:47 Hello World<br>11:57:52 Hello World<br>11:57:57 Hello World<br></code></pre></td></tr></table></figure>
+
+<p>进入 NFS 服务器 <code>nfs-server</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker <span class="hljs-built_in">exec</span> -it nfs-server bash<br></code></pre></td></tr></table></figure>
+
+<p>检查共享文件夹 <code>/nfsshare</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@1538c90c8c07:/nfsshare <span class="hljs-comment"># cd /nfsshare &amp;&amp; ls</span><br>root@1538c90c8c07:/nfsshare <span class="hljs-comment"># cd /nfsshare &amp;&amp; ls -l</span><br>total 12<br>-rw-r--r--    1 root     root            12 Feb  9 15:21 NFS.txt<br>drwxr-xr-x    2 root     root          4096 Feb 10 11:53 pvc-b320c46c-582e-4580-94b7-7eedb1003140<br></code></pre></td></tr></table></figure>
+
+<p>存在之前与之的NFS.txt，以及 kubernetes 集群创建的文件夹 <code> pvc-b320c46c-582e-4580-94b7-7eedb1003140</code> 。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@1538c90c8c07:/nfsshare <span class="hljs-comment"># cat pvc-b320c46c-582e-4580-94b7-7eedb1003140/output.txt | grep 11:57:57</span><br>11:57:57 Hello World<br></code></pre></td></tr></table></figure>
+
+<p>进入此目录，检查其内容，是 <code>nfs-pod</code> Pod 中服务写入的文件。</p>
+<p>NFS CSI 插件安装完成。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>[1] <a target="_blank" rel="noopener" href="https://baijiahao.baidu.com/s?id=1716423711735232537&wfr=spider&for=pc"><code>https://baijiahao.baidu.com/s?id=1716423711735232537&amp;wfr=spider&amp;for=pc</code></a><br>[2] <a target="_blank" rel="noopener" href="https://developer.aliyun.com/article/727327"><code>https://developer.aliyun.com/article/727327</code></a><br>[3] <a target="_blank" rel="noopener" href="https://github.com/kubernetes-csi/csi-driver-nfs/blob/master/docs/install-csi-driver-v4.6.0.md"><code>https://github.com/kubernetes-csi/csi-driver-nfs/blob/master/docs/install-csi-driver-v4.6.0.md</code></a><br>[4] <a target="_blank" rel="noopener" href="https://blog.csdn.net/fengcai_ke/article/details/129151551"><code>https://blog.csdn.net/fengcai_ke/article/details/129151551</code></a></p>
+<h2 id="BUG-记录"><a href="#BUG-记录" class="headerlink" title="BUG 记录"></a>BUG 记录</h2><p><a id="bug1"><a href="#anchor1">[1]</a></a> 挂载 nfs 时，导出目录 <code>nfsshare</code> 出现错误。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/kubelabs/" class="category-chain-item">kubelabs</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/k8s/" class="print-no-link">#k8s</a>
+      
+        <a href="/tags/csi/" class="print-no-link">#csi</a>
+      
+        <a href="/tags/nfs/" class="print-no-link">#nfs</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>kubelabs——k8s学习与实验【5】容器存储接口CSI（下）：NFS CSI 插件实验</div>
+      <div>https://artistzq.github.io/2024/02/10/k8s学习总结_5_CSI/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yao.zq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年2月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/02/04/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_4_k8s%E5%AD%98%E5%82%A8/" title="kubelabs——k8s学习与实验【4】容器存储接口CSI（上）：Kubernetes存储">
+                        <span class="hidden-mobile">kubelabs——k8s学习与实验【4】容器存储接口CSI（上）：Kubernetes存储</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -13,21 +13,21 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
   <meta name="theme-color" content="#2f4154">
-  <meta name="author" content="姚宗庆">
+  <meta name="author" content="Yao.zq">
   <meta name="keywords" content="">
   
     <meta name="description" content="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时1 概念容器运行时（Container Runtime）是 Kubernetes（k8s）集群中每个节点的核心组件，负责管理容器的整个生命周期，包括从拉取和运行容器镜像等关键任务。     在k8s 1.23版本之前，kubelet依赖于dockershim来操作Docker容器运行时。Docker内部集成了con">
 <meta property="og:type" content="article">
 <meta property="og:title" content="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时">
 <meta property="og:url" content="https://artistzq.github.io/2024/01/26/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_3_CRI/index.html">
-<meta property="og:site_name" content="姚宗庆的博客">
+<meta property="og:site_name" content="Yao&#39;s blog">
 <meta property="og:description" content="kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时1 概念容器运行时（Container Runtime）是 Kubernetes（k8s）集群中每个节点的核心组件，负责管理容器的整个生命周期，包括从拉取和运行容器镜像等关键任务。     在k8s 1.23版本之前，kubelet依赖于dockershim来操作Docker容器运行时。Docker内部集成了con">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124152148.png">
 <meta property="og:image" content="https://92697-imgs.oss-cn-hangzhou.aliyuncs.com/blogs/20240124144045.png">
 <meta property="article:published_time" content="2024-01-26T15:17:15.000Z">
-<meta property="article:modified_time" content="2024-01-26T15:36:55.581Z">
-<meta property="article:author" content="姚宗庆">
+<meta property="article:modified_time" content="2024-01-27T15:27:06.926Z">
+<meta property="article:author" content="Yao.zq">
 <meta property="article:tag" content="k8s">
 <meta property="article:tag" content="cri">
 <meta name="twitter:card" content="summary_large_image">
@@ -35,7 +35,7 @@
   
   
   
-  <title>kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时 - 姚宗庆的博客</title>
+  <title>kubelabs——k8s学习与实验【3】容器运行时接口（CRI）以及切换容器运行时 - Yao&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -496,7 +496,7 @@
       
         <div class="license-meta-item">
           <div>作者</div>
-          <div>姚宗庆</div>
+          <div>Yao.zq</div>
         </div>
       
       
@@ -533,6 +533,12 @@
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/2024/02/04/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_4_k8s%E5%AD%98%E5%82%A8/" title="kubelabs——k8s学习与实验【4】容器存储接口CSI（上）：Kubernetes存储">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">kubelabs——k8s学习与实验【4】容器存储接口CSI（上）：Kubernetes存储</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
