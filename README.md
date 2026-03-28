@@ -6,6 +6,33 @@
 
 ---
 
+## 📌 分支说明
+
+本仓库有两个分支：
+
+| 分支 | 内容 | 用途 |
+|------|------|------|
+| **`main`** | Hexo 源文件（Markdown 文章、配置文件） | 日常写文章、编辑配置 |
+| **`gh-pages`** | 编译后的静态 HTML | GitHub Pages 自动部署 |
+
+### 工作流程
+
+```
+写文章 (main 分支)
+    ↓
+hexo generate
+    ↓
+生成静态文件
+    ↓
+hexo deploy
+    ↓
+推送到 gh-pages 分支 → GitHub Pages 自动部署
+```
+
+**日常开发请在 `main` 分支进行！**
+
+---
+
 ## 📝 本地开发
 
 ### 环境要求
@@ -48,7 +75,7 @@ npx hexo new "文章标题"
 npx hexo clean && npx hexo generate && npx hexo deploy
 ```
 
-部署会自动推送到 GitHub 的 `main` 分支。
+部署会自动推送到 GitHub 的 `gh-pages` 分支。
 
 ---
 
