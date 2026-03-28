@@ -1,0 +1,108 @@
+favicon: /img/favicon.png
+apple_touch_icon: /img/favicon.png
+
+
+navbar:
+  blog_title: 姚宗庆的博客
+  menu:
+    - { key: 'home', link: '/', icon: 'iconfont icon-home-fill' }
+    - { key: 'archive', link: '/archives/', icon: 'iconfont icon-archive-fill' }
+    - { key: 'category', link: '/categories/', icon: 'iconfont icon-category-fill' }
+    - { key: 'tag', link: '/tags/', icon: 'iconfont icon-tags-fill' }
+    - { key: 'about', link: '/about/', icon: 'iconfont icon-user-fill' }
+
+
+index:
+  banner_img: /img/cover.jpg
+  slogan:
+    enable: true
+    text: 姚宗庆的笔记
+    api:
+      enable: false
+      url: "https://v1.hitokoto.cn/"
+      method: "GET"
+      headers: {}
+      keys: ["hitokoto"]
+  post_url_target: _blank
+
+
+post:
+  banner_img: /img/cover.jpg
+
+archive:
+  banner_img: /img/cover.jpg
+
+category:
+  banner_img: /img/cover.jpg
+
+tag:
+  banner_img: /img/cover.jpg
+
+about:
+  banner_img: /img/cover.jpg
+  avatar: /img/avatar.jpg
+
+
+lazyload:
+  enable: true
+  onlypost: false
+  offset_factor: 2
+  ground_glass:
+    enable: true
+    # Number of blurred pixel. the larger the number, the higher the blur
+    px: 3
+    # Ratio of opacity, 1.0 is completely opaque
+    # available: 0 - 1.0
+    alpha: 0.7
+
+
+dark_mode:
+  enable: true
+  default: auto
+
+code:
+  # 是否开启复制代码的按钮
+  copy_btn: true
+  # 代码语言
+  language:
+    enable: true
+    default: "TEXT"
+  # 代码高亮
+  highlight:
+    enable: true
+    # 代码块是否显示行号
+    line_number: true
+    # 实现高亮的库，对应下面的设置
+    lib: "highlightjs"
+    highlightjs:
+ 
+      # 在链接中挑选 style 填入
+ 
+      # Select a style in the link
+ 
+      # See: highlight.js demo
+ 
+      style: "github gist"
+ 
+      style_dark: "dark"
+ 
+    prismjs:
+ 
+      # 在下方链接页面右侧的圆形按钮挑选 style 填入，也可以直接填入 css 链接
+ 
+      # Select the style button on the right side of the link page, you can also set the CSS link
+ 
+      # See: Prism
+ 
+      style: "default"
+ 
+      style_dark: "tomorrow night"
+ 
+      # 设为 true 高亮将本地静态生成（但只支持部分 prismjs 插件），设为 false 高亮将在浏览器通过 js 生成
+ 
+      # If true, it will be generated locally (but some prismjs plugins are not supported). If false, it will be generated via JS in the browser
+ 
+      preprocess: true
+
+
+
