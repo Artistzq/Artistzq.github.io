@@ -4,6 +4,35 @@
   
   
   <entry>
+    <title>AI 帮我复活旧博客</title>
+    <link href="/2026/03/28/AI-%E5%B8%AE%E6%88%91%E5%A4%8D%E6%B4%BB%E6%97%A7%E5%8D%9A%E5%AE%A2/"/>
+    <url>/2026/03/28/AI-%E5%B8%AE%E6%88%91%E5%A4%8D%E6%B4%BB%E6%97%A7%E5%8D%9A%E5%AE%A2/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p><strong>说明</strong>：本篇文章由 AI 辅助撰写，包括博客的整个复活流程也是 AI 帮我完成的。</p></blockquote><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>我的博客托管在 GitHub Pages 上，之前一直是用 Hexo 搭建的。但好久没管它，最近想重新捡起来写点东西，结果发现完全不知道怎么搞了……</p><p>更糟糕的是，GitHub 仓库里只有编译后的 HTML 文件，源文件（Markdown 文章、配置文件什么的）全在本地，而我早就找不到原来的文件夹在哪了。</p><h2 id="找回源文件"><a href="#找回源文件" class="headerlink" title="找回源文件"></a>找回源文件</h2><p>好在天无绝人之路，我在电脑里翻到了一个旧文件夹 <code>~/Projects/blogs</code>，里面居然完整地保存着 Hexo 项目的所有源文件：</p><ul><li>6 篇之前的文章（都是关于 K8s 的学习笔记）</li><li>Hexo 配置文件 <code>_config.yml</code></li><li>Fluid 主题配置 <code>_config.fluid.yml</code></li><li>各种主题、模板之类的</li></ul><p>看到 <code>source/_posts/</code> 目录里的 Markdown 文件时，真的松了一口气。</p><h2 id="让-AI-帮忙"><a href="#让-AI-帮忙" class="headerlink" title="让 AI 帮忙"></a>让 AI 帮忙</h2><p>虽然找到了源文件，但我还是遇到了不少问题：</p><h3 id="1-本地环境没了"><a href="#1-本地环境没了" class="headerlink" title="1. 本地环境没了"></a>1. 本地环境没了</h3><p>运行 <code>hexo server</code> 的时候发现命令不存在，Node.js 环境也不知道什么时候被我搞没了。</p><p><strong>解决方法</strong>：用 nvm 重新安装 Node.js</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">brew install nvm<br>nvm install --lts<br>nvm use --lts<br></code></pre></td></tr></table></figure><h3 id="2-源文件没备份到-GitHub"><a href="#2-源文件没备份到-GitHub" class="headerlink" title="2. 源文件没备份到 GitHub"></a>2. 源文件没备份到 GitHub</h3><p>之前的我只会把编译后的 HTML 推送到 GitHub（<code>hexo deploy</code>），源文件从来没上传过。这意味着如果哪天电脑坏了，这些文章就全没了。</p><p><strong>解决方法</strong>：</p><ol><li>在本地初始化 Git 仓库</li><li>创建一个 <code>main</code> 分支专门放源码</li><li>配置 <code>.gitignore</code> 排除 <code>node_modules/</code>、<code>themes/</code> 这些可以重新下载的文件</li><li>推送到 GitHub</li></ol><h3 id="3-分支管理混乱"><a href="#3-分支管理混乱" class="headerlink" title="3. 分支管理混乱"></a>3. 分支管理混乱</h3><p>一开始我没搞清楚 Hexo 的部署机制，以为 <code>main</code> 分支就是放源码的。后来才明白：</p><ul><li>GitHub Pages 会读取某个分支的内容来构建网站</li><li>如果把源码放在 <code>main</code> 分支，那部署的内容就没地方放了</li></ul><p><strong>最终的分支结构</strong>：</p><table><thead><tr><th>分支</th><th>内容</th></tr></thead><tbody><tr><td><code>main</code></td><td>Hexo 源文件（我日常开发的分支）</td></tr><tr><td><code>gh-pages</code></td><td>编译后的静态 HTML（GitHub Pages 读取这个）</td></tr></tbody></table><h3 id="4-部署配置"><a href="#4-部署配置" class="headerlink" title="4. 部署配置"></a>4. 部署配置</h3><p>修改 <code>_config.yml</code> 里的 deploy 配置：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">deploy:</span><br>  <span class="hljs-attr">type:</span> <span class="hljs-string">git</span><br>  <span class="hljs-attr">repository:</span> <span class="hljs-string">https://github.com/Artistzq/Artistzq.github.io.git</span><br>  <span class="hljs-attr">branch:</span> <span class="hljs-string">gh-pages</span><br></code></pre></td></tr></table></figure><p>然后运行：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">hexo clean &amp;&amp; hexo generate &amp;&amp; hexo deploy<br></code></pre></td></tr></table></figure><p>就会自动把生成的静态文件推送到 <code>gh-pages</code> 分支，GitHub Pages 会自动部署。</p><h2 id="最终成果"><a href="#最终成果" class="headerlink" title="最终成果"></a>最终成果</h2><p>现在我的博客已经完全复活了：</p><ul><li>源文件备份在 GitHub 的 <code>main</code> 分支，换电脑也不怕丢</li><li>运行 <code>hexo server</code> 可以本地预览</li><li>运行 <code>hexo deploy</code> 可以一键部署</li><li>写了一篇 README 记录整个项目结构</li></ul><p>访问地址：<a href="https://artistzq.github.io/">https://artistzq.github.io</a></p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次复活博客的过程，让我意识到几个重要的点：</p><ol><li><strong>源文件一定要备份</strong>：最好是 Git 仓库，本地 + 云端双保险</li><li><strong>搞清楚部署机制</strong>：Hexo 的 <code>deploy</code> 命令其实是把 <code>public/</code> 目录推送到指定的 Git 分支</li><li><strong>分支管理要清晰</strong>：源码和部署文件分开，避免混乱</li></ol><p>最后，感谢 AI 的帮忙，让我少走了很多弯路。接下来就可以安心写文章了！</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>日常</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Hexo</tag>
+      
+      <tag>GitHub Pages</tag>
+      
+      <tag>AI 工具</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>kubelabs——k8s学习与实验【6】k8s中的RBAC：基于角色的访问控制实验</title>
     <link href="/2024/02/19/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_6_RBAC/"/>
     <url>/2024/02/19/k8s%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93_6_RBAC/</url>
